@@ -1,0 +1,55 @@
+#### Scheduler
+    - Finds what is the best node for new pods to run on.
+    - If pod is not created yet (pod-definition.yaml file has not been run yet), you can manually set the node name in the file.
+- *kubectl get pods -n kube-system -> list pods in the kube-system namespace*
+- *kubectl replace --force -f nginx.yaml -> replaces pod
+- *kubectl  get pods --watch -> watch the output change*
+___
+#### Labels
+    - Labels are added in a key-value format under metadata:
+```yaml
+metadata:
+    name: simple-webapp
+    labels:
+        app: App1
+        function: Front-end
+```
+    - kubectl get pods --selector app=App1
+    - kubectl get pod --selector env=prod,bu=finance,tier=frontend
+___
+#### Taints & Tolerations
+      - are used to set restrictions on what pods get sheduled on the nodes
+- *kubectl taint nodes node-name key-value:taint-effect*
+    - 3 taint-effects
+      - NoSchedule: No pods will be schedule on the node 
+      - PreferNoSchedule: Scheduler will try not to schedule pods
+      - NoExecute: Any existing pods will be evicted if they can't tolerate the new taint
+  - *kubectl taint nodes node1 app=blue:NoSchedule*
+    - Tolerations can be added pod definition files:
+```yaml
+spec:
+    containers:
+    - name: nginx-container
+      image: nginx
+    tolerations:
+    - key: "app"
+      operator: "Equal"
+      value: "Blue"
+      effect: "NoSchedule"
+```
+        - kubectl describe node kubemaster | grep Taint
+        - master node by default has a NoSchedule taint
+        - remove taint with "-" at the end
+          - ex: kubectl taint node controlplane node-role.kubernetes.io/control-plane:NoSchedule-
+___
+#### Node Selectors
+- you can label nodes to then specify in pods what nodes they can go on
+- in node: *kubectl label nodes <node-name> <label-key=label-value*
+- ex: *kubectl labl nodes node01 size=Large*
+- then in pod under spec add:
+```yaml
+spec:
+    nodeSelector:
+        size: Large
+```
+

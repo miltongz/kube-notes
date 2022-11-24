@@ -45,7 +45,7 @@ ___
 #### Node Selectors
 - you can label nodes to then specify in pods what nodes they can go on
 - in node: *kubectl label nodes <node-name> <label-key=label-value*
-- ex: *kubectl labl nodes node01 size=Large*
+- ex: *kubectl label nodes node01 size=Large*
 - then in pod under spec add:
 ```yaml
 spec:

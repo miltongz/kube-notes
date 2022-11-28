@@ -198,3 +198,65 @@ spec:
 - then run: `kubectl create -f elasti.yaml`
 ___
 #### Static Pods
+- kubelet on every node and relies on the kube api-server on what to load; which were decided by the kube scheduler
+- kube scheduler is stored in the etcd cluster (data store) 
+- kubelet can manage node independently
+- pods created under these conditions with solely the kubelet are know as static pods.
+- pod defintion files can be stored under `/etc/kubernetes/manifests` for example and the kubelet can be made to watch this directory
+- can edit the `kubeconfig.yaml` file to specify the `staticPodPath:` (can check the `kubelet.service` file as well)
+- you can use static pods to deploy componenets of the controlplane itself. Create definition files for each component and store in the preferred manifest folder path:
+    - controller-manager.yaml
+    - apiserver.yaml
+    - etcd.yaml
+- by deploying the components as pods, you don't have to worry about downloading binaries or the services crashing, since as static pods they will automatically be created whene necessary.
+- kube admin tool sets up the components this. `kubectl get pods -n kube-system` will show the components being deployed as pods
+- when `kubectl get pods -A`, static pods will generally their node name appended to the end (ex: `kube-apiserver-controlplane` or `etcd-controlplane`)
+- you can also check the yaml file of the pod; information located under "ownerReferences":
+```yaml
+ownerReferences:
+- apiVersion: v1
+  controller: true
+  kind: Node
+  name: controlplane
+```
+- static pod path under kubelet config path: `/var/lib/kubelet/config.yaml` under `staticPodPath`
+#### Multiple Schedulers
+- kubernetes can be instructed to have a pod scheduled by a specific scheduler
+- you can have multiple scheduler config files:
+`myscheduler-config.yaml`
+```yaml
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: kubeSchedulerConfiguration
+profiles:
+- schedulerName: my-scheduler
+```
+- a config can be specified to select a scheduler "leader" since only scheduler can be active a time (look into 'leaderElection' for more info)
+- in a pod definition file, you can speciy a custom scheduler under `spec:` and add a new item called `schedulerName:`
+- running `kubectl get events -o wide` will let you view the "source" of an event. In this case "my-custom-scheduler" can be the source.
+- could also view the logs of the scheduler with `kubectl    log my-custom-scheduler --name-space=kube-system`
+___
+#### Scheduler Profiles
+- pods have priorities specified under `spec`:
+```yaml
+spec:
+  priorityClassName: high-priority
+```
+- A priority class first needs to be made:
+```yaml
+apiVersion: v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 10000000
+globalDefault: false
+description: "This priority class should be used for xyz service pods only."
+```
+- this allow pods with high-priority got to the beginning of the scheduler queue
+- after this scheduling phase, the pod enters the filter phase:
+    - nodes that don't have enought resources for the pods are filtered out
+- after comes the scoring phase; nodes are given different weights:
+    - the node with more resources left after scheduling a pod will get a higher score and chosen for the node to be scheduled
+- finally, in the binding phase, a pod is bound to the node with the highest score
+- scheduling plugins are used to achieve each phase
+- custom plugins can be made and plugged into the "extension points" of each phase
+- instead creating multiple schedulers which can cause an issue that one scheduler may not know that another one is scheduling, you can create multiple profiles in a single scheduler config

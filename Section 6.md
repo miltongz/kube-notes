@@ -59,7 +59,21 @@ ___
     ETCDCTL_API=3 etcdctl \
         snapshot save snapshot.db
     ```
+- to specify a location:
+    ```yaml
+    ETCDCTL_API=3 etcdctl \
+        snapshot save snapshot.db \
+
+    ```
 - `snapshot status snapshot.db`
 - to restore:
     - `service kube-apiserver stop`
-    - 
+    - ```yaml
+      ETCDCTL_API=3 etcdctl \
+      snapshot restore snapshot.db \
+      --data-dir /var/lib/etcd-from-backup
+      ```
+      - then configure etcd.service to use new data directory specified in restore
+      - `systemctl daemon-reload`
+      - `system etcd restart`
+      - `service kube-apiserver start`

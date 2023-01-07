@@ -2,7 +2,7 @@
     - Finds what is the best node for new pods to run on.
     - If pod is not created yet (pod-definition.yaml file has not been run yet), you can manually set the node name in the file.
 - *kubectl get pods -n kube-system -> list pods in the kube-system namespace*
-- *kubectl replace --force -f nginx.yaml -> replaces pod
+- *kubectl replace --force -f nginx.yaml -> replaces pod*
 - *kubectl  get pods --watch -> watch the output change*
 ___
 #### Labels
